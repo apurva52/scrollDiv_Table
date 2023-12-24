@@ -1,0 +1,161 @@
+<ifirm-loader [loading]="isLoader"></ifirm-loader>
+
+<button id="BtnRestore" [ifirmResource]="'dms.rename'" [disabled]="GridServiceService?.dmsRenameButton" (click)="onRenameButtonOpen()"></button>
+<button id="BtnRestore" [ifirmResource]="'dms.emailpreview.download'" [disabled]="dmsDownloadButton" (click)="downloadFile()"></button>
+<button id="BtnRestore" [ifirmResource]="'dms.editpdf.openpdf'" [disabled]="GridServiceService?.dmsOpenPdfButton" (click)="createPdf()" *ngIf="GridServiceService.showOpenPdf"></button>
+<button id="BtnRestore" [ifirmResource]="'dms.editpdf.mergepdf'" [disabled]="GridServiceService?.dmsMergePdfButton" (click)="createMergePdf()" *ngIf="GridServiceService.showMergePdf"></button>
+<button id="BtnRestore" [ifirmResource]="'dms.publishtoportal'" [disabled]="dmsPublishButton" (click)="publishToPortal()"></button>
+<button id="BtnRestore" [ifirmResource]="'dms.sendforsignature'" [disabled]="dmsSignatureButton" (click)="onRenameButtonOpen()"></button>
+<button id="BtnRestore" [ifirmResource]="'ifirm.common.copy'" [disabled]="dmsCopyMoveButton" (click)="onCopyMoveOpen(EventType.Copy)"></button>
+<button id="BtnRestore" [ifirmResource]="'dms.move.move'" [disabled]="dmsCopyMoveButton" (click)="onCopyMoveOpen(EventType.Move)"></button>
+<button id="BtnRestore" [ifirmResource]="'dms.notedelete'" [disabled]="dmsDeleteButton" (click)="onDeleteOpen()"></button>
+
+<div class="recycle-block">
+  <div id="table">
+    <table class="output_table sortable scroll-dms-list "
+      [ngClass]="!!isSearchFilter ? 'dms-client-documents-search-list' : 'dms-table-list'">
+      <thead id="theader">
+        <tr>
+          <td class="col-selectfile"><input type="checkbox"  (change)="onSelectAll($event)" [(ngModel)]="selectedAll">
+          </td>
+          <td class="col-type">
+            <a [ifirmResource]="'ifirm.common.type'"></a>
+          </td>
+          <td class="col-name" (click)=" !isSearchFilter && sortType('Name')">
+            <a [ifirmResource]="'ifirm.common.name'" [ngClass]=" !isSearchFilter && sortClass('Name')"></a>
+          </td>
+
+          <td class="col-location" *ngIf="!!isSearchFilter">
+            <a [ifirmResource]="'dms.location'"></a>
+          </td>
+
+          <td class="col-lastupdateon" (click)="!isSearchFilter && sortType('UpdatedDate')">
+            <a [ifirmResource]="'dms.lastupdatedon'" [ngClass]="!isSearchFilter && sortClass('UpdatedDate')"></a>
+          </td>
+          <td class="col-lastupdateby" (click)="!isSearchFilter && sortType('UpdatedBy')">
+            <a [ifirmResource]="'dms.lastupdatedby'" [ngClass]="!isSearchFilter && sortClass('UpdatedBy')"></a>
+          </td>
+          <td class="col-size col-size-alignment">
+            <a [ifirmResource]="'ifirm.common.size'"></a>
+          </td>
+          <td class="col-tag ng-scope"></td>
+          <td class="col-notes"></td>
+          <td class="col-properties"></td>
+          <td id="tdHeaderVersion" class="col-versions" style="padding-left: 12px;"></td>
+          <td class="col-fileLink"></td>
+        </tr>
+      </thead>
+      <tbody id="dmsFileListTable" class="dmsContactFileList" scrollLoad (onScroll)="onScrolled($event)">
+        <td class="noentries" *ngIf="isSearchFilter && filesData?.length == 0; else tableRecord">
+          <span [ifirmResource]="'dms.filters.noentries'"></span>
+        </td>
+        <ng-template #tableRecord>
+          <tr *ngFor="let rowItem of filesData;let index = i" (mouseenter)="showIcons(rowItem)"
+            (mouseleave)="hideIcons(rowItem)">
+            <td class="col-selectfile">
+              <input type="checkbox"   *ngIf="rowItem.Kind !== 3" (change)="selectAllFilesChanged()"
+                [(ngModel)]="rowItem.selected" (click)="onChecked($event,rowItem)">
+                <input type="checkbox"  *ngIf="rowItem.Kind == 3" [disabled]="rowItem.Kind == 3"></td>
+            <td id="dmsGridType" class="col-type"><span id="icon" class="dms-{{ rowItem.Icon }} dms-type-icon"></span>
+              <div *ngIf="rowItem.IsLocked" [ngClass]="rowItem.LockType == 2 ? 'dms-shared-lock-icon' : 'dms-lock-icon'"
+                (click)="openFilelock(rowItem)"></div>
+            </td>
+            <td (click)=" rowItem.Kind == 2 || rowItem.Kind == 3 ? openGrid(rowItem) : openFile(rowItem)"
+              id="dmsGridName" class="col-name" (mouseenter)="fileNameMouseOver(rowItem)" class="col-name cur-point"
+              [ngStyle]="{'cursor': rowItem.Kind==2 ? 'pointer' : ''}">
+              <div class="dms-grid-file-name dms-tooltip">
+                <span>
+                  <pre class="tooltiptext dms-pre-tag">{{rowItem.HierarchyPath}}</pre>
+                </span>
+                <span>
+                  <pre class="dms-pre-tag dms-pre-tag-ellipsis">{{rowItem.Name}}</pre>
+                </span>
+              </div>
+
+            </td>
+            <td id="dmsGridLocation" class="col-location" *ngIf="!!isSearchFilter">
+              <div class="dms-grid-file-location dms-tooltip">
+                <span>
+                  <pre class="tooltiptext dms-pre-tag ">  {{ rowItem.Location }}</pre>
+                </span>
+                <span (click)="openContainingFolder(rowItem.EntityType, rowItem.EntityId, rowItem.ParentId)">
+                  <pre class="dms-pre-tag dms-pre-tag-ellipsis">{{ rowItem.Location }}</pre>
+                </span>
+              </div>
+            </td>
+            <td id="dmsGridUpdatedDate" class="col-lastupdateon"><span>{{ rowItem.UpdatedDate }}</span></td>
+            <td id="dmsGridUpdatedBy" class="col-lastupdateby">
+              <div class="dms-ellipsis dms-grid-file-updatedby dms-tooltip">
+                <span class="tooltiptext">{{ rowItem.UpdatedBy }}</span>
+                <span>{{ rowItem.UpdatedBy }}</span>
+              </div>
+            </td>
+            <td id="dmsGridSize" class="col-size" style="text-align: right;"><span>{{ rowItem.Size }}</span></td>
+
+            <td style="position: relative;" class="col-tag text-al-right cur-point">
+
+              <span (mouseleave)="hideTags(rowItem,true)" *ngIf="rowItem.Kind == 1 && rowItem.TagCount > 0"
+                (click)="onClickAddTags(rowItem)">
+                <span class="dms-counttagtext">{{rowItem.TagCount}}</span>
+                <span class="dms-counttag"></span>
+              </span>
+              <div (mouseleave)="hideTags(rowItem,false)" (mouseenter)="showTags(rowItem)"
+                [id]="'dmsGridTag-' + rowItem.Kind + rowItem.Id" *ngIf="rowItem.Kind == 1 && rowItem.TagCount > 0"
+                class="tagsTooltip hideTags">
+                <div class="upper-arrow"></div>
+                <div class="tags-content">
+                  <ng-select [items]="GridServiceService.tags" (remove)="removeTag($event)"
+                    [ngModelOptions]="{standalone: true}" [(ngModel)]="GridServiceService.selectedTagList"
+                    [clearable]="false" [placeholder]="searchTag" [hideSelected]="true" [multiple]="true"
+                    bindLabel="name">
+                  </ng-select>
+                </div>
+              </div>
+            </td>
+            <td class="col-notes">
+              <div class="dms-tooltip cur-point">
+                  <span [id]="'dmsGridToolTipNote-'+ rowItem.Id" class="tooltiptext" [ifirmResource]="'dms.addnote'" *ngIf="rowItem.Kind==1" style="width:45px"></span>
+                  <span *ngIf="rowItem.Kind==1" [id]="'dmsGridShowMoreNote-'+ rowItem.Id + rowItem.Kind + rowItem.EntityId" class="dms-showmore" (click)="openFileNote(rowItem.Id)"></span>
+              </div>
+          </td>
+            <td class="col-properties cur-point">
+              <div class="dms-ellipsis dms-grid-file-name">
+                <a (click)="showPropertiesDialog(rowItem)" class="dms-propertyBox"
+                  [id]="'dmsProperties-' + rowItem.Id + rowItem.Kind + rowItem.EntityId"></a>
+              </div>
+            </td>
+            <td class="col-download cur-point" *ngIf="rowItem.Kind == 3">
+              <div class="dms-ellipsis dms-grid-file-name dms-tooltip">
+                <a
+                (click)="downloadContact(rowItem.EntityId)"
+                  class="dms-downloadIcon"
+                  [id]="
+                    'dmsDownload-' + rowItem.Id + rowItem.Kind + rowItem.EntityId
+                  "
+                  title="Download all folders and files for this contact"
+                ></a>
+              </div>
+            </td>
+            <td id="dmsGridVersions" class="col-versions">
+              <div class="dms-ellipsis dms-grid-file-name dms-tooltip"
+                [style.display]="!!rowItem.IsVersionExist ? 'block' : 'none'">
+                <a (click)="showListVersionDialog(rowItem)" class="dms-versionBox" [id]="
+                'dmsVersion-' + rowItem.Id + rowItem.Kind + rowItem.EntityId
+              " title="{{versionToolTip(rowItem.VersionCount)}}"></a>
+              </div>
+            </td>
+            <td class="col-fileLink">
+              <div class="dms-ellipsis dms-grid-file-name dms-tooltip" style="width:15px;margin-top:3px;"
+                [style.display]="rowItem.Kind==1? 'block' : 'none'">
+                <a class="dms-fileLink" [id]="
+                'dmsGridCopyLink-' + rowItem.Id + rowItem.Kind + rowItem.EntityId
+              " title="Copy Link" (click)="addToClipboardLink(rowItem.Id)"></a>
+              </div>
+            </td>
+
+          </tr>
+        </ng-template>
+      </tbody>
+    </table>
+  </div>
+</div>
